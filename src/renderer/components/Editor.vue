@@ -19,11 +19,16 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:content', value: string): void
   (e: 'change'): void
+  (e: 'toggle-wrap', enabled: boolean): void
 }>()
 
 const editorContainer = ref<HTMLElement>()
 let editorView: EditorView | null = null
 const themeCompartment = new Compartment()
+const wrapCompartment = new Compartment()
+
+const WORD_WRAP_KEY = 'report-editor-word-wrap'
+const wordWrap = ref(localStorage.getItem(WORD_WRAP_KEY) !== 'false')
 
 const reportLanguage = StreamLanguage.define({
   name: 'report',
@@ -519,6 +524,7 @@ function createEditorState(content: string) {
         }
       }),
       themeCompartment.of(theme === 'dark' ? getDarkTheme() : getLightTheme()),
+      wrapCompartment.of(wordWrap.value ? [EditorView.lineWrapping] : []),
     ]
   })
 }
@@ -528,6 +534,16 @@ function applyTheme(theme: 'light' | 'dark') {
   editorView.dispatch({
     effects: themeCompartment.reconfigure(theme === 'dark' ? getDarkTheme() : getLightTheme())
   })
+}
+
+function setWordWrap(enabled: boolean) {
+  wordWrap.value = enabled
+  localStorage.setItem(WORD_WRAP_KEY, String(enabled))
+  if (!editorView) return
+  editorView.dispatch({
+    effects: wrapCompartment.reconfigure(enabled ? [EditorView.lineWrapping] : [])
+  })
+  emit('toggle-wrap', enabled)
 }
 
 let themeObserver: MutationObserver | null = null
@@ -590,7 +606,9 @@ function getSelectedText(): string {
 
 defineExpose({
   insertText,
-  getSelectedText
+  getSelectedText,
+  setWordWrap,
+  wordWrap
 })
 </script>
 

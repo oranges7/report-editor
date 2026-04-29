@@ -22,6 +22,7 @@
       @load-template="handleLoadTemplate"
       @save-template="handleSaveTemplate"
       @theme-change="handleThemeChange"
+      @toggle-wrap="handleToggleWrap"
     />
 
     <div class="main-body">
@@ -322,6 +323,11 @@ function handleThemeChange(theme: 'light' | 'dark') {
   if (window.electronAPI?.setTitleBarTheme) {
     window.electronAPI.setTitleBarTheme(theme)
   }
+}
+
+function handleToggleWrap() {
+  const current = editorRef.value?.wordWrap ?? true
+  editorRef.value?.setWordWrap(!current)
 }
 </script>
 

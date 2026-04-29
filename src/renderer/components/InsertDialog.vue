@@ -222,7 +222,7 @@ function handleConfirm() {
       text = `#link:${form.value.title}:${form.value.filePath}#\n`
       break
     case 'span':
-      text = `#span:${form.value.title}#\n`
+      text = `#span:${form.value.title}\n`
       break
     case 'paper':
       text = `#paper:${form.value.paper}#\n`

@@ -16,7 +16,7 @@
             </svg>
           </div>
           <span class="brand-name">报告编辑器</span>
-          <span class="brand-version">v1.2.1</span>
+          <span class="brand-version">v1.2.2</span>
         </div>
 
         <div class="sep" />
@@ -56,6 +56,10 @@
         <button class="act-btn theme-toggle" @click="toggleTheme" :title="theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'">
           <svg v-if="theme === 'dark'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
           <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+
+        <button class="act-btn wrap-toggle" :class="{ active: wordWrap }" @click="toggleWrap" :title="wordWrap ? '关闭自动换行' : '开启自动换行'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M3 12h15a3 3 0 1 1 0 6h-4"/><polyline points="14 15 11 18 14 21"/></svg>
         </button>
 
         <div class="dropdown-wrap" ref="insertRef">
@@ -166,6 +170,7 @@ const emit = defineEmits<{
   (e: 'load-template'): void
   (e: 'save-template'): void
   (e: 'theme-change', theme: 'light' | 'dark'): void
+  (e: 'toggle-wrap'): void
 }>()
 
 const insertOpen = ref(false)
@@ -173,6 +178,7 @@ const templateOpen = ref(false)
 const insertRef = ref<HTMLElement>()
 const templateRef = ref<HTMLElement>()
 const theme = ref<'light' | 'dark'>('dark')
+const wordWrap = ref(localStorage.getItem('report-editor-word-wrap') !== 'false')
 
 const shortPath = computed(() => {
   if (!props.filePath) return ''
@@ -185,6 +191,11 @@ function toggleTheme() {
   document.documentElement.setAttribute('data-theme', theme.value)
   localStorage.setItem('report-editor-theme', theme.value)
   emit('theme-change', theme.value)
+}
+
+function toggleWrap() {
+  wordWrap.value = !wordWrap.value
+  emit('toggle-wrap')
 }
 
 function toggleInsert() {
@@ -413,6 +424,25 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
 .act-btn.theme-toggle:hover {
   background: var(--accent-yellow-soft);
   color: var(--accent-yellow);
+}
+
+.act-btn.wrap-toggle {
+  color: var(--text-overlay0);
+  padding: 0 6px;
+}
+
+.act-btn.wrap-toggle:hover {
+  background: var(--bg-surface1);
+  color: var(--text-subtext0);
+}
+
+.act-btn.wrap-toggle.active {
+  color: var(--accent-teal);
+}
+
+.act-btn.wrap-toggle.active:hover {
+  background: rgba(148, 226, 213, 0.10);
+  color: var(--accent-teal);
 }
 
 .act-label {

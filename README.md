@@ -2,7 +2,7 @@
 
 一款专业的报告模板桌面编辑器，基于 Electron 41 + Vue 3 + CodeMirror 6 构建，支持自定义标记语法高亮、快捷元素插入、文件浏览器、双主题切换和文本片段管理。
 
-![版本](https://img.shields.io/badge/version-1.2.1-blue)
+![版本](https://img.shields.io/badge/version-1.2.2-blue)
 ![Electron](https://img.shields.io/badge/Electron-41-47848f)
 ![Vue](https://img.shields.io/badge/Vue-3.4-42b883)
 ![CodeMirror](https://img.shields.io/badge/CodeMirror-6-d92a2a)
@@ -38,7 +38,7 @@
 | 图片 | `#graph:标题:路径#` | 插入图片（支持多图） |
 | 表格 | `#table:标题:路径#` | 插入表格 |
 | 链接 | `#link:标题:路径#` | 链接文件（不展示为图表） |
-| Span | `#span:` | 行内标注 |
+| Span | `#span:内容` | 行内标注（无尾部#） |
 | Paper | `#paper:` | 文献引用 |
 | Ann | `#ann:` | 注释标记 |
 
@@ -94,7 +94,7 @@
 ### 注释元素
 
 ```
-#span:标注内容#
+#span:标注内容
 #paper:文献引用#
 #ann:注释说明#
 ```
@@ -212,6 +212,11 @@ npm run electron:build
 ---
 
 ## 版本历史
+
+### v1.2.2
+
+- 编辑器新增自动换行开关（工具栏换行按钮，偏好自动保存）
+- `#span:` 语法不再需要尾部 `#` 号
 
 ### v1.2.1
 
