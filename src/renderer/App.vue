@@ -26,13 +26,19 @@
 
     <div class="main-body">
       <transition name="slide-sidebar">
-        <aside class="sidebar" v-if="workDir">
+        <aside class="sidebar" v-if="workDir" :style="{ width: sidebarWidth + 'px' }">
           <FileBrowser
             :work-dir="workDir"
             @select-file="handleFileSelect"
           />
         </aside>
       </transition>
+
+      <div
+        v-if="workDir"
+        class="resize-handle"
+        @mousedown="startResize"
+      />
 
       <main class="editor-area">
         <div class="editor-shell">
@@ -77,11 +83,49 @@ const content = ref('')
 const isModified = ref(false)
 const workDir = ref<string | null>(null)
 
+const SIDEBAR_MIN = 180
+const SIDEBAR_MAX = 600
+const SIDEBAR_DEFAULT = 300
+const SIDEBAR_STORAGE_KEY = 'report-editor-sidebar-width'
+
+const sidebarWidth = ref(SIDEBAR_DEFAULT)
+
 const insertDialogVisible = ref(false)
 const insertDialogType = ref('')
 const templateDialogVisible = ref(false)
 const templateDialogMode = ref<'load' | 'save'>('load')
 const selectedText = ref('')
+
+function startResize(e: MouseEvent) {
+  e.preventDefault()
+  const startX = e.clientX
+  const startWidth = sidebarWidth.value
+
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+
+  const overlay = document.createElement('div')
+  overlay.className = 'resize-overlay'
+  document.body.appendChild(overlay)
+
+  function onMouseMove(ev: MouseEvent) {
+    const delta = ev.clientX - startX
+    const newWidth = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, startWidth + delta))
+    sidebarWidth.value = newWidth
+  }
+
+  function onMouseUp() {
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarWidth.value))
+  }
+
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', onMouseUp)
+}
 
 const defaultContent = `#Custom:名字
 #Contract:项目编号
@@ -95,6 +139,13 @@ const defaultContent = `#Custom:名字
 
 onMounted(() => {
   content.value = defaultContent
+  const savedWidth = localStorage.getItem(SIDEBAR_STORAGE_KEY)
+  if (savedWidth) {
+    const w = parseInt(savedWidth, 10)
+    if (!isNaN(w) && w >= SIDEBAR_MIN && w <= SIDEBAR_MAX) {
+      sidebarWidth.value = w
+    }
+  }
 })
 
 function handleNewFile() {
@@ -423,23 +474,49 @@ html, body, #app {
 
 .slide-sidebar-enter-active,
 .slide-sidebar-leave-active {
-  transition: all var(--duration-slow) var(--ease-out);
+  transition: opacity var(--duration-slow) var(--ease-out), transform var(--duration-slow) var(--ease-out);
 }
 
 .slide-sidebar-enter-from,
 .slide-sidebar-leave-to {
-  width: 0;
   opacity: 0;
   transform: translateX(-20px);
 }
 
 .sidebar {
-  width: 256px;
   flex-shrink: 0;
   border-right: 1px solid var(--border-subtle);
   background: var(--bg-crust);
   overflow: hidden;
   position: relative;
+}
+
+.resize-handle {
+  width: 5px;
+  cursor: col-resize;
+  background: transparent;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  transition: background var(--duration-fast) ease;
+}
+
+.resize-handle:hover {
+  background: var(--accent-blue-med);
+}
+
+.resize-handle:active {
+  background: var(--accent-blue);
+}
+
+.resize-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  cursor: col-resize;
 }
 
 .sidebar::after {
