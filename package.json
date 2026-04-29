@@ -1,0 +1,48 @@
+{
+  "name": "report-editor",
+  "version": "1.2.0",
+  "description": "报告模板编辑器",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "electron:dev": "npm run build:electron && concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "npm run build && npm run build:electron && electron-builder"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.3.0",
+    "@codemirror/language": "^6.9.0",
+    "@codemirror/search": "^6.5.0",
+    "@codemirror/state": "^6.4.0",
+    "@codemirror/view": "^6.23.0",
+    "@lezer/highlight": "^1.2.0",
+    "@lezer/lr": "^1.4.0",
+    "codemirror": "^6.0.1",
+    "element-plus": "^2.5.0",
+    "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "concurrently": "^8.2.0",
+    "electron": "^41.3.0",
+    "electron-builder": "^24.9.0",
+    "typescript": "~5.6.0",
+    "vite": "^5.0.0",
+    "vue-tsc": "^2.2.0",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.reporteditor.app",
+    "productName": "报告编辑器",
+    "directories": {
+      "output": "release-${version}"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "public/**/*"
+    ]
+  }
+}
