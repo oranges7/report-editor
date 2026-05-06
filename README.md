@@ -2,7 +2,7 @@
 
 一款专业的报告模板桌面编辑器，基于 Electron 41 + Vue 3 + CodeMirror 6 构建，支持自定义标记语法高亮、快捷元素插入、文件浏览器、双主题切换和文本片段管理。
 
-![版本](https://img.shields.io/badge/version-1.2.2-blue)
+![版本](https://img.shields.io/badge/version-1.2.3-blue)
 ![Electron](https://img.shields.io/badge/Electron-41-47848f)
 ![Vue](https://img.shields.io/badge/Vue-3.4-42b883)
 ![CodeMirror](https://img.shields.io/badge/CodeMirror-6-d92a2a)
@@ -212,6 +212,11 @@ npm run electron:build
 ---
 
 ## 版本历史
+
+### v1.2.3
+
+- 编辑区右键上下文菜单（复制、剪切、粘贴、全选、查找替换）
+- 未选中文本时复制/剪切按钮自动禁用
 
 ### v1.2.2
 

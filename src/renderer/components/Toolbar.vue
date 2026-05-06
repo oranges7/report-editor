@@ -16,7 +16,7 @@
             </svg>
           </div>
           <span class="brand-name">报告编辑器</span>
-          <span class="brand-version">v1.2.2</span>
+          <span class="brand-version">v1.2.3</span>
         </div>
 
         <div class="sep" />

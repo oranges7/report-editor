@@ -1,5 +1,44 @@
 <template>
-  <div ref="editorContainer" class="editor-container"></div>
+  <div ref="editorContainer" class="editor-container" @contextmenu.prevent="onContextMenu">
+    <div
+      v-if="contextMenu.visible"
+      class="ctx-menu"
+      :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
+      @mousedown.stop
+    >
+      <button class="ctx-item" :class="{ disabled: !canCopy }" @click="ctxCopy">
+        <span class="ctx-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </span>
+        复制<span class="ctx-shortcut">Ctrl+C</span>
+      </button>
+      <button class="ctx-item" :class="{ disabled: !canCopy }" @click="ctxCut">
+        <span class="ctx-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+        </span>
+        剪切<span class="ctx-shortcut">Ctrl+X</span>
+      </button>
+      <button class="ctx-item" @click="ctxPaste">
+        <span class="ctx-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+        </span>
+        粘贴<span class="ctx-shortcut">Ctrl+V</span>
+      </button>
+      <div class="ctx-divider" />
+      <button class="ctx-item" @click="ctxSelectAll">
+        <span class="ctx-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+        全选<span class="ctx-shortcut">Ctrl+A</span>
+      </button>
+      <button class="ctx-item" @click="ctxFind">
+        <span class="ctx-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        查找替换<span class="ctx-shortcut">Ctrl+F</span>
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -546,6 +585,80 @@ function setWordWrap(enabled: boolean) {
   emit('toggle-wrap', enabled)
 }
 
+const contextMenu = ref({ visible: false, x: 0, y: 0 })
+const canCopy = ref(false)
+
+function onContextMenu(e: MouseEvent) {
+  if (!editorView) return
+  const sel = editorView.state.selection.main
+  canCopy.value = sel.from !== sel.to
+
+  const container = editorContainer.value!
+  const rect = container.getBoundingClientRect()
+  let x = e.clientX - rect.left
+  let y = e.clientY - rect.top
+  if (x + 200 > rect.width) x = rect.width - 200
+  if (y + 200 > rect.height) y = rect.height - 200
+  if (x < 0) x = 0
+  if (y < 0) y = 0
+
+  contextMenu.value = { visible: true, x, y }
+}
+
+function closeContextMenu() {
+  contextMenu.value.visible = false
+}
+
+function ctxCopy() {
+  closeContextMenu()
+  if (!editorView) return
+  const sel = editorView.state.selection.main
+  if (sel.from === sel.to) return
+  const text = editorView.state.doc.sliceString(sel.from, sel.to)
+  navigator.clipboard.writeText(text)
+}
+
+function ctxCut() {
+  closeContextMenu()
+  if (!editorView) return
+  const sel = editorView.state.selection.main
+  if (sel.from === sel.to) return
+  const text = editorView.state.doc.sliceString(sel.from, sel.to)
+  navigator.clipboard.writeText(text)
+  editorView.dispatch({
+    changes: { from: sel.from, to: sel.to, insert: '' },
+    selection: { anchor: sel.from }
+  })
+}
+
+async function ctxPaste() {
+  closeContextMenu()
+  if (!editorView) return
+  try {
+    const text = await navigator.clipboard.readText()
+    const sel = editorView.state.selection.main
+    editorView.dispatch({
+      changes: { from: sel.from, to: sel.to, insert: text },
+      selection: { anchor: sel.from + text.length }
+    })
+  } catch { /* clipboard access denied */ }
+}
+
+function ctxSelectAll() {
+  closeContextMenu()
+  if (!editorView) return
+  editorView.dispatch({
+    selection: { anchor: 0, head: editorView.state.doc.length }
+  })
+  editorView.focus()
+}
+
+function ctxFind() {
+  closeContextMenu()
+  if (!editorView) return
+  editorView.dispatch({ effects: togglePanel.of(true) })
+}
+
 let themeObserver: MutationObserver | null = null
 
 onMounted(() => {
@@ -564,11 +677,23 @@ onMounted(() => {
     attributes: true,
     attributeFilter: ['data-theme']
   })
+
+  document.addEventListener('mousedown', onDocMouseDown)
 })
 
 onUnmounted(() => {
   themeObserver?.disconnect()
+  document.removeEventListener('mousedown', onDocMouseDown)
 })
+
+function onDocMouseDown(e: MouseEvent) {
+  if (contextMenu.value.visible) {
+    const target = e.target as HTMLElement
+    if (!target.closest('.ctx-menu')) {
+      closeContextMenu()
+    }
+  }
+}
 
 watch(() => props.content, (newContent) => {
   if (editorView && editorView.state.doc.toString() !== newContent) {
@@ -616,5 +741,89 @@ defineExpose({
 .editor-container {
   height: 100%;
   width: 100%;
+  position: relative;
+}
+
+.ctx-menu {
+  position: absolute;
+  z-index: 300;
+  min-width: 200px;
+  background: var(--bg-surface0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  padding: 4px;
+  backdrop-filter: blur(12px);
+  animation: ctx-in 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ctx-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-subtext0);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 100ms ease;
+  text-align: left;
+}
+
+.ctx-item:hover:not(.disabled) {
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+}
+
+.ctx-item:active:not(.disabled) {
+  transform: scale(0.98);
+}
+
+.ctx-item.disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.ctx-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.ctx-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ctx-shortcut {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--text-overlay0);
+  font-family: var(--font-mono);
+  letter-spacing: -0.2px;
+}
+
+.ctx-item:hover:not(.disabled) .ctx-shortcut {
+  color: var(--accent-blue);
+  opacity: 0.7;
+}
+
+.ctx-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 4px 6px;
 }
 </style>
